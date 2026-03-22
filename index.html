@@ -77,12 +77,12 @@ body::before{content:'';position:fixed;inset:0;z-index:0;
 /* ════════════════════════════════════════════
    BOOT SCREEN
 ════════════════════════════════════════════ */
-#pg-boot{position:fixed;inset:0;z-index:8000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
-.boot-logo{font-size:40px;animation:pulse 2s infinite}
+
+
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
-.boot-spinner{width:40px;height:40px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite}
+
 @keyframes spin{to{transform:rotate(360deg)}}
-#boot-msg{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+
 
 /* ════════════════════════════════════════════
    LANDING — NAVBAR
@@ -355,15 +355,10 @@ body::before{content:'';position:fixed;inset:0;z-index:0;
 <body>
 <div id="toasts"></div>
 
-<!-- ══════════ BOOT ══════════ -->
-<div id="pg-boot">
-  <div class="boot-logo">🗄️</div>
-  <div class="boot-spinner"></div>
-  <div id="bmsg">Loading VaultSpace...</div>
-</div>
+<!-- boot screen removed -->
 
 <!-- ══════════ LANDING ══════════ -->
-<div id="pg-landing" class="hidden">
+<div id="pg-landing">
 
   <!-- NAVBAR -->
   <nav class="l-nav">
@@ -689,6 +684,7 @@ let db,auth;
 let CU=null,UD=null;
 let aMode='register',selRole=null,curTab=null,selRental=null;
 let authBusy=false;
+let fbReady=false; // becomes true once Firebase is initialised
 
 /* ══════════════════════════════════════
    TOAST
@@ -706,8 +702,9 @@ function T(msg,t='i',ms=4000){
    PAGE SWITCHING
 ══════════════════════════════════════ */
 function showOnly(id){
-  ['pg-boot','pg-landing','pg-auth','pg-dash'].forEach(p=>{
-    document.getElementById(p).classList.toggle('hidden',p!==id);
+  ['pg-landing','pg-auth','pg-dash'].forEach(p=>{
+    const el=document.getElementById(p);
+    if(el) el.classList.toggle('hidden',p!==id);
   });
   if(id==='pg-landing') window.scrollTo(0,0);
 }
@@ -715,6 +712,32 @@ function goLanding(){showOnly('pg-landing');}
 function goAuth(mode){
   aMode=mode; updateAuthUI(); showOnly('pg-auth');
   setTimeout(()=>document.getElementById('a-email')?.focus(),100);
+  // If Firebase not ready yet, show a subtle notice
+  if(!fbReady){
+    const btn=document.getElementById('a-btn');
+    const lbl=document.getElementById('a-lbl');
+    if(btn&&lbl){
+      btn.disabled=true;
+      lbl.textContent='Connecting...';
+      // Poll until ready
+      const poll=setInterval(()=>{
+        if(fbReady){
+          clearInterval(poll);
+          btn.disabled=false;
+          lbl.textContent=aMode==='login'?'Sign In':'Create Account';
+        }
+      },300);
+      // Give up after 15s
+      setTimeout(()=>{
+        clearInterval(poll);
+        if(!fbReady){
+          lbl.textContent=aMode==='login'?'Sign In':'Create Account';
+          btn.disabled=false;
+          T('Connection slow. Try clicking Sign In/Register again.','i',5000);
+        }
+      },15000);
+    }
+  }
 }
 function goHome(){authBusy=false;showOnly('pg-dash');buildDash();}
 
@@ -748,6 +771,10 @@ function withTO(p,ms,msg){
 }
 
 async function doAuth(){
+  if(!fbReady||!auth||!db){
+    T('Still connecting to Firebase. Please wait a moment and try again.','e',5000);
+    return;
+  }
   const email=document.getElementById('a-email').value.trim();
   const pass=document.getElementById('a-pass').value;
   if(!email||!pass){T('Enter email and password','e');return;}
@@ -1503,59 +1530,60 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 /* ══════════════════════════════════════
    BOOT — Dynamic Firebase Loader
 ══════════════════════════════════════ */
-function setBM(m){const el=document.getElementById('bmsg');if(el)el.textContent=m;}
+function setBM(m){}
 function ldS(src){return new Promise((ok,fail)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>fail(new Error('Load failed: '+src));document.head.appendChild(s);});}
 
 async function boot(){
-  setBM('Loading Firebase...');
-  const v='10.12.0',cdn=`https://www.gstatic.com/firebasejs/${v}/`;
-  try{
-    await ldS(cdn+'firebase-app-compat.js');
-    await ldS(cdn+'firebase-auth-compat.js');
-    await ldS(cdn+'firebase-firestore-compat.js');
-  }catch(e){
-    document.getElementById('pg-boot').innerHTML=`
-    <div style="text-align:center;padding:30px;font-family:'Space Mono',monospace;max-width:340px">
-      <div style="font-size:40px;margin-bottom:20px">⚠️</div>
-      <div style="color:var(--red);font-size:14px;font-weight:700;margin-bottom:12px">Firebase Failed to Load</div>
-      <div style="color:var(--dim);font-size:12px;line-height:1.8;margin-bottom:20px">${e.message}<br/><br/>Make sure you have internet connection and are opening this file in Chrome browser.</div>
-      <button onclick="location.reload()" style="padding:12px 24px;background:var(--grad);color:#04070f;border:none;border-radius:8px;font-family:inherit;font-weight:700;cursor:pointer;font-size:12px;text-transform:uppercase;letter-spacing:.06em">↻ Retry</button>
-    </div>`;
-    return;
-  }
-  try{await ldS('https://checkout.razorpay.com/v1/checkout.js');}catch(_){}
+  // Show landing INSTANTLY — no waiting for Firebase
+  showOnly('pg-landing');
 
-  setBM('Initialising...');
+  // Load Firebase in background silently
+  function ldSafe(src){
+    return new Promise(res=>{
+      const s=document.createElement('script');
+      s.src=src;
+      s.onload=()=>res(true);
+      s.onerror=()=>res(false);
+      setTimeout(()=>res(false),10000);
+      document.head.appendChild(s);
+    });
+  }
+
+  const v='10.12.0', cdn=`https://www.gstatic.com/firebasejs/${v}/`;
+  const ok1=await ldSafe(cdn+'firebase-app-compat.js');
+  if(!ok1){ T('No internet? Firebase failed to load.','e',8000); return; }
+  const ok2=await ldSafe(cdn+'firebase-auth-compat.js');
+  const ok3=await ldSafe(cdn+'firebase-firestore-compat.js');
+  if(!ok2||!ok3){ T('Firebase partially loaded. Try refreshing.','e',6000); return; }
+
+  // Razorpay optional
+  ldSafe('https://checkout.razorpay.com/v1/checkout.js');
+
+  if(!window.firebase){ return; }
   try{
     if(firebase.apps.length===0) firebase.initializeApp(FB);
     db=firebase.firestore();
     auth=firebase.auth();
-  }catch(e){
-    document.getElementById('pg-boot').innerHTML=`<div style="text-align:center;padding:30px;font-family:'Space Mono',monospace;color:var(--red)">Firebase init failed:<br/>${e.message}</div>`;
-    return;
-  }
+    fbReady=true; // Firebase is now ready
+  }catch(e){ T('Firebase init error: '+e.message,'e',6000); return; }
 
-  setBM('Checking session...');
+  // Restore session if user was already logged in
   let done=false;
-  const tmo=setTimeout(()=>{if(!done){done=true;showOnly('pg-landing');}},5000);
-
+  const tmo=setTimeout(()=>{ done=true; },3000);
   auth.onAuthStateChanged(async user=>{
-    if(done||authBusy)return;
+    if(done||authBusy) return;
     done=true; clearTimeout(tmo);
     if(user&&!UD){
       CU=user;
       try{
         const doc=await db.collection('users').doc(user.uid).get();
-        if(doc.exists){UD=doc.data();goHome();}
-        else{showOnly('pg-landing');}
-      }catch(e){showOnly('pg-landing');}
-    }else{
-      showOnly('pg-landing');
+        if(doc.exists){ UD=doc.data(); goHome(); }
+      }catch(e){}
     }
   });
 }
 
-window.addEventListener('DOMContentLoaded',boot);
+window.addEventListener('DOMContentLoaded', boot);
 </script>
 </body>
 </html>
