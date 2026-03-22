@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VaultSpace</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#050810;--s1:#0b1120;--s2:#111a2e;--border:rgba(56,189,248,.15);--glow:rgba(56,189,248,.4);--cyan:#38bdf8;--green:#34d399;--amber:#fbbf24;--red:#f87171;--txt:#e2e8f0;--dim:#64748b;--mid:#94a3b8;--mono:'Space Mono',monospace;--sans:'Syne',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(56,189,248,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
+#app{position:relative;z-index:1;min-height:100vh}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#0c4a6e;border-radius:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:11px 22px;border-radius:6px;font-family:var(--mono);font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;text-transform:uppercase;letter-spacing:.05em}
+.btn-primary{background:var(--cyan);color:#050810;box-shadow:0 0 20px rgba(56,189,248,.3)}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-outline{background:transparent;color:var(--cyan);border:1px solid var(--glow)}
+.btn-outline:hover{background:rgba(56,189,248,.08)}
+.btn-ghost{background:var(--s2);color:var(--mid);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--txt)}
+.btn-green{background:var(--green);color:#050810}
+.btn-green:hover{transform:translateY(-1px)}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(248,113,113,.3)}
+.btn-sm{padding:6px 14px;font-size:11px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+.w-full{width:100%}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim)}
+.field input,.field select,.field textarea{background:var(--s2);border:1px solid var(--border);color:var(--txt);font-family:var(--mono);font-size:13px;padding:10px 14px;border-radius:6px;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--glow)}
+.field textarea{resize:vertical;min-height:80px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:500px){.field-row{grid-template-columns:1fr}}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.badge-cyan{background:rgba(56,189,248,.1);color:var(--cyan);border:1px solid rgba(56,189,248,.2)}
+.badge-green{background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.badge-amber{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
+#toasts{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 16px;border-radius:8px;font-family:var(--mono);font-size:12px;display:flex;align-items:center;gap:8px;animation:tIn .3s ease;min-width:240px;border:1px solid}
+.toast-s{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--green)}
+.toast-e{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3);color:var(--red)}
+.toast-i{background:rgba(56,189,248,.1);border-color:rgba(56,189,248,.3);color:var(--cyan)}
+@keyframes tIn{from{transform:translateX(110%);opacity:0}to{transform:none;opacity:1}}
+.prog-wrap{background:var(--s2);border-radius:4px;height:6px;overflow:hidden}
+.prog-bar{height:100%;background:linear-gradient(90deg,#0ea5e9,var(--cyan));transition:width .3s}
+#pg-landing{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
+.land-logo{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.3em;color:var(--cyan);margin-bottom:40px;display:flex;align-items:center;gap:10px}
+.land-icon{width:36px;height:36px;border:2px solid var(--cyan);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.land-h1{font-size:clamp(36px,7vw,72px);font-weight:800;line-height:1;letter-spacing:-.02em;margin-bottom:20px}
+.land-h1 span{display:block;color:var(--cyan)}
+.land-sub{font-family:var(--mono);font-size:13px;color:var(--dim);max-width:440px;line-height:1.7;margin-bottom:48px}
+.land-btns{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.land-stats{margin-top:70px;display:flex;gap:40px;flex-wrap:wrap;justify-content:center}
+.sn{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--cyan)}
+.sl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+#pg-auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.auth-box{width:100%;max-width:420px}
+.auth-back{font-family:var(--mono);font-size:12px;color:var(--dim);cursor:pointer;margin-bottom:24px;display:flex;align-items:center;gap:6px}
+.auth-back:hover{color:var(--cyan)}
+.auth-h1{font-size:30px;font-weight:800;margin-bottom:6px}
+.auth-sub{color:var(--dim);font-family:var(--mono);font-size:12px;margin-bottom:28px}
+.auth-form{display:flex;flex-direction:column;gap:14px}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.role-card{border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s;text-align:center;background:var(--s2)}
+.role-card:hover{border-color:var(--glow)}
+.role-card.sel{border-color:var(--cyan);background:rgba(56,189,248,.08)}
+.rc-i{font-size:26px;margin-bottom:8px}
+.rc-n{font-weight:700;font-size:14px}
+.rc-d{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:3px}
+.auth-foot{font-family:var(--mono);font-size:11px;text-align:center;color:var(--dim);margin-top:4px}
+.auth-foot a{color:var(--cyan);cursor:pointer;text-decoration:underline}
+#pg-dash{min-height:100vh;display:flex;flex-direction:column}
+.navbar{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--border);background:rgba(5,8,16,.9);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+.nav-brand{font-family:var(--mono);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--cyan)}
+.nav-r{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.nav-email{padding:4px 8px;background:var(--s2);border:1px solid var(--border);border-radius:4px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tabs{display:flex;gap:2px;padding:16px 24px 0;border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+.tab{padding:9px 18px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;color:var(--dim);border-radius:6px 6px 0 0;transition:all .2s;border:1px solid transparent;border-bottom:none;position:relative;bottom:-1px;white-space:nowrap}
+.tab:hover{color:var(--txt);background:var(--s2)}
+.tab.on{color:var(--cyan);background:var(--s1);border-color:var(--border);border-bottom-color:var(--s1)}
+.dbody{flex:1;padding:28px 24px;max-width:1100px;width:100%;margin:0 auto}
+@media(max-width:600px){.navbar{padding:0 14px}.tabs{padding:12px 14px 0}.dbody{padding:18px 14px}}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.st{font-size:22px;font-weight:800}
+.ss{font-family:var(--mono);font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-top:3px}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:26px}
+.stat-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+.sn2{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--cyan)}
+.sl2{font-size:11px;color:var(--dim);margin-top:4px;text-transform:uppercase;letter-spacing:.08em}
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+.plan-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:22px;transition:all .2s}
+.plan-card:hover{border-color:var(--glow);transform:translateY(-2px)}
+.pt{font-size:17px;font-weight:700;margin-bottom:4px}
+.pp{font-family:var(--mono);font-size:19px;font-weight:700;color:var(--cyan)}
+.pp small{font-size:11px;color:var(--dim)}
+.plan-rows{display:flex;flex-direction:column;gap:7px;margin:14px 0}
+.pr{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--dim)}
+.pr span:last-child{color:var(--txt)}
+.pdesc{font-size:13px;color:var(--mid);line-height:1.6;padding-top:12px;border-top:1px solid var(--border);margin-bottom:16px}
+.pa{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.rl{display:flex;flex-direction:column;gap:14px}
+.rc{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:18px}
+.rh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.rg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.ril{font-family:var(--mono);font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.riv{font-family:var(--mono);font-size:13px;color:var(--txt);margin-top:2px}
+.fzone{border:2px dashed var(--border);border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;font-family:var(--mono)}
+.fzone:hover,.fzone.drag{border-color:var(--cyan);background:rgba(56,189,248,.04)}
+.fzi{font-size:34px;margin-bottom:8px}
+.fzm{color:var(--cyan);font-size:14px;font-weight:700}
+.fzs{color:var(--dim);font-size:11px;margin-top:6px}
+.ftbl{width:100%;border-collapse:collapse;margin-top:14px}
+.ftbl th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);padding:9px 12px;border-bottom:1px solid var(--border);text-align:left}
+.ftbl td{padding:11px 12px;border-bottom:1px solid rgba(56,189,248,.05);font-family:var(--mono);font-size:12px}
+.ftbl tr:last-child td{border-bottom:none}
+.ftbl tr:hover td{background:rgba(56,189,248,.03)}
+.cpbox{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:28px}
+.cpbox h3{font-size:15px;font-weight:700;margin-bottom:18px}
+.cpf{display:flex;flex-direction:column;gap:14px}
+.rpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px}
+.rpi{border:1px solid var(--border);border-radius:8px;padding:13px;cursor:pointer;transition:all .2s;background:var(--s2);font-family:var(--mono);font-size:12px}
+.rpi:hover{border-color:var(--glow)}
+.rpi.sel{border-color:var(--cyan);background:rgba(56,189,248,.08)}
+.rpin{font-weight:700;color:var(--txt);margin-bottom:3px}
+.rpim{color:var(--dim);font-size:10px}
+.empty{text-align:center;padding:50px 16px;font-family:var(--mono)}
+.ei{font-size:42px;margin-bottom:14px;opacity:.4}
+.empty p{color:var(--dim);font-size:13px;line-height:1.6}
+.modal-bg{position:fixed;inset:0;z-index:2000;background:rgba(5,8,16,.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--s1);border:1px solid var(--glow);border-radius:14px;padding:28px;width:100%;max-width:440px}
+</style>
+</head>
+<body>
+<div id="toasts"></div>
+<div id="app">
+
+<!-- BOOT -->
+<div id="boot" style="position:fixed;inset:0;z-index:5000;background:#050810;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="width:36px;height:36px;border:2px solid #0c4a6e;border-top-color:#38bdf8;border-radius:50%;animation:sp .8s linear infinite"></div>
+  <span id="bmsg" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.2em;color:#38bdf8;text-transform:uppercase">Loading...</span>
+  <style>@keyframes sp{to{transform:rotate(360deg)}}</style>
+</div>
+
+<!-- LANDING -->
+<div id="pg-landing" class="hidden">
+  <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center">
+    <div class="land-logo"><div class="land-icon">🗄️</div>VaultSpace</div>
+    <h1 class="land-h1">Rent &amp; Monetize<span>Distributed Storage</span></h1>
+    <p class="land-sub">A peer-to-peer cloud storage marketplace. Providers list plans, renters get secure space.</p>
+    <div class="land-btns">
+      <button class="btn btn-primary" onclick="goAuth('register')">⚡ Get Started Free</button>
+      <button class="btn btn-outline" onclick="goAuth('login')">→ Sign In</button>
+    </div>
+    <div class="land-stats">
+      <div><div class="sn">256-bit</div><div class="sl">Encryption</div></div>
+      <div><div class="sn">Free</div><div class="sl">No Storage Fee</div></div>
+      <div><div class="sn">INR</div><div class="sl">Razorpay</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH -->
+<div id="pg-auth" class="hidden">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px">
+    <div class="auth-box">
+      <div class="auth-back" onclick="goLanding()">← Back</div>
+      <div class="auth-h1" id="a-title">Create Account</div>
+      <div class="auth-sub" id="a-sub">Join the marketplace</div>
+      <div class="auth-form">
+        <div class="field" id="a-role-wrap">
+          <label>Register As</label>
+          <div class="role-grid">
+            <div class="role-card" id="rc-provider" onclick="pickRole('provider')">
+              <div class="rc-i">🏗️</div><div class="rc-n">Provider</div><div class="rc-d">List plans &amp; earn</div>
+            </div>
+            <div class="role-card" id="rc-renter" onclick="pickRole('renter')">
+              <div class="rc-i">📦</div><div class="rc-n">Renter</div><div class="rc-d">Rent space &amp; store files</div>
+            </div>
+          </div>
+        </div>
+        <div class="field" id="a-name-wrap">
+          <label>Full Name</label>
+          <input id="a-name" type="text" placeholder="Your name"/>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input id="a-email" type="email" placeholder="you@example.com"/>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="a-pass" type="password" placeholder="Min 6 characters"/>
+        </div>
+        <button class="btn btn-primary w-full" id="a-btn" onclick="doAuth()">
+          <span id="a-lbl">Create Account</span>
+        </button>
+        <div class="auth-foot" id="a-foot">
+          Already have an account? <a onclick="flipAuth()">Sign in instead</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="pg-dash" class="hidden" style="min-height:100vh;display:flex;flex-direction:column">
+  <nav class="navbar">
+    <div class="nav-brand">🗄️ VaultSpace</div>
+    <div class="nav-r">
+      <span class="badge badge-cyan" id="d-role">—</span>
+      <span class="nav-email" id="d-email">—</span>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign Out</button>
+    </div>
+  </nav>
+  <div class="tabs" id="d-tabs"></div>
+  <div class="dbody" id="d-body"></div>
+</div>
+
+</div>
+
+<script>
+/* CONFIG */
+const FB = {
+  apiKey:"AIzaSyDoKRnXlAmTARihwH3l3XjZGdHPX7fx7OU",
+  authDomain:"vault-space.firebaseapp.com",
+  projectId:"vault-space",
+  storageBucket:"vault-space.firebasestorage.app",
+  messagingSenderId:"1002148265",
+  appId:"1:1002148265:web:5a5290440fc70873acf4b8"
+};
+const RZP = "rzp_test_XXXXXXXXXXXXXXXX";
+
+/* STATE */
+let db,auth;
+let CU=null, UD=null;
+let aMode='register', selRole=null, curTab=null, selRental=null;
+let authBusy=false;
+
+/* TOAST */
+function T(msg,t='i',ms=3500){
+  const e=document.createElement('div');
+  e.className='toast toast-'+t;
+  e.innerHTML='<span>'+(t==='s'?'✓':t==='e'?'✕':'◆')+'</span><span>'+msg+'</span>';
+  document.getElementById('toasts').appendChild(e);
+  setTimeout(()=>e.remove(),ms);
+}
+
+/* PAGES */
+function showOnly(id){
+  ['pg-landing','pg-auth','pg-dash'].forEach(p=>
+    document.getElementById(p).classList.toggle('hidden',p!==id));
+  document.getElementById('boot').style.display='none';
+}
+function goLanding(){showOnly('pg-landing');}
+function goAuth(mode){
+  aMode=mode;showOnly('pg-auth');refreshAuth();
+}
+function goHome(){
+  authBusy=false;
+  showOnly('pg-dash');
+  buildTabs();
+}
+
+/* AUTH UI */
+function refreshAuth(){
+  const L=aMode==='login';
+  document.getElementById('a-title').textContent=L?'Sign In':'Create Account';
+  document.getElementById('a-sub').textContent=L?'Welcome back':'Join the marketplace';
+  document.getElementById('a-lbl').textContent=L?'Sign In':'Create Account';
+  document.getElementById('a-role-wrap').classList.toggle('hidden',L);
+  document.getElementById('a-name-wrap').classList.toggle('hidden',L);
+  document.getElementById('a-foot').innerHTML=L
+    ?`Don't have an account? <a onclick="flipAuth()">Sign up</a>`
+    :`Already have an account? <a onclick="flipAuth()">Sign in</a>`;
+}
+function flipAuth(){aMode=aMode==='login'?'register':'login';refreshAuth();}
+function pickRole(r){
+  selRole=r;
+  document.getElementById('rc-provider').classList.toggle('sel',r==='provider');
+  document.getElementById('rc-renter').classList.toggle('sel',r==='renter');
+}
+
+/* DO AUTH */
+async function doAuth(){
+  const email=document.getElementById('a-email').value.trim();
+  const pass=document.getElementById('a-pass').value;
+  if(!email||!pass){T('Fill email and password','e');return;}
+  const btn=document.getElementById('a-btn');
+  const lbl=document.getElementById('a-lbl');
+  authBusy=true; btn.disabled=true;
+  lbl.textContent=aMode==='login'?'Signing in...':'Creating...';
+
+  function rst(){
+    authBusy=false;
+    btn.disabled=false;
+    lbl.textContent=aMode==='login'?'Sign In':'Create Account';
+  }
+
+  // Timeout wrapper — Firebase sometimes hangs on mobile
+  function withTimeout(promise, ms, msg){
+    const tmo = new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg||'Request timed out. Check internet connection.')), ms));
+    return Promise.race([promise, tmo]);
+  }
+
+  if(aMode==='register'){
+    const name=document.getElementById('a-name').value.trim();
+    if(!name){T('Enter your name','e');rst();return;}
+    if(!selRole){T('Select Provider or Renter','e');rst();return;}
+
+    lbl.textContent='Creating account...';
+    let cred;
+    try{
+      cred = await withTimeout(
+        auth.createUserWithEmailAndPassword(email, pass),
+        15000, 'Auth timeout. Check internet connection.'
+      );
+    }catch(e){
+      if(e.code==='auth/email-already-in-use'){
+        T('Email already exists — signing in...','i',2500);
+        lbl.textContent='Signing in...';
+        try{
+          cred = await withTimeout(
+            auth.signInWithEmailAndPassword(email, pass),
+            15000, 'Sign-in timeout. Check internet.'
+          );
+        }catch(e2){ T('Wrong password for this email: '+e2.message,'e',6000); rst(); return; }
+      } else {
+        T(e.message, 'e', 6000); rst(); return;
+      }
+    }
+
+    lbl.textContent='Saving profile...';
+    try{
+      await withTimeout(
+        db.collection('users').doc(cred.user.uid).set({
+          email, name, role:selRole,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }),
+        15000, 'Firestore timeout. Check internet or Firestore rules.'
+      );
+    }catch(fe){
+      T('Profile save failed: '+fe.message,'e',8000);
+      await auth.signOut(); rst(); return;
+    }
+
+    CU=cred.user; UD={email, name, role:selRole};
+    T('Welcome to VaultSpace! 🎉','s');
+    goHome();
+
+  } else {
+    // LOGIN
+    lbl.textContent='Signing in...';
+    let cred;
+    try{
+      cred = await withTimeout(
+        auth.signInWithEmailAndPassword(email, pass),
+        15000, 'Sign-in timeout. Check internet connection.'
+      );
+    }catch(e){
+      const msg = (e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')
+        ? 'Wrong email or password.' : e.message;
+      T(msg,'e',5000); rst(); return;
+    }
+
+    lbl.textContent='Loading profile...';
+    let doc;
+    try{
+      doc = await withTimeout(
+        db.collection('users').doc(cred.user.uid).get(),
+        15000, 'Firestore timeout. Check internet or Firestore rules.'
+      );
+    }catch(fe){
+      T('Firestore error: '+fe.message,'e',8000);
+      await auth.signOut(); rst(); return;
+    }
+
+    if(!doc.exists){
+      await auth.signOut(); rst();
+      showRecovery(email, pass); return;
+    }
+
+    CU=cred.user; UD=doc.data();
+    T('Welcome back, '+(UD.name||email)+'! 👋','s');
+    goHome();
+  }
+}
+async function doLogout(){
+  await auth.signOut();
+  CU=null;UD=null;curTab=null;selRental=null;authBusy=false;
+  T('Signed out','i');goLanding();
+}
+
+/* RECOVERY */
+function showRecovery(email,pass){
+  window._rp=pass; window._rr='provider';
+  const m=document.createElement('div');
+  m.className='modal-bg';m.id='rec-modal';
+  m.innerHTML=`<div class="modal">
+    <div style="font-size:19px;font-weight:800;margin-bottom:8px">Complete Profile</div>
+    <p style="font-family:var(--mono);font-size:12px;color:var(--dim);margin-bottom:20px">Account exists but profile is missing. Enter your name and pick a role.</p>
+    <div class="field" style="margin-bottom:14px">
+      <label>Name</label>
+      <input id="rec-name" type="text" placeholder="Your name"/>
+    </div>
+    <div class="role-grid" style="margin-bottom:20px">
+      <div class="role-card sel" id="rec-prov" onclick="document.getElementById('rec-prov').classList.add('sel');document.getElementById('rec-rent').classList.remove('sel');window._rr='provider'">
+        <div class="rc-i">🏗️</div><div class="rc-n">Provider</div>
+      </div>
+      <div class="role-card" id="rec-rent" onclick="document.getElementById('rec-rent').classList.add('sel');document.getElementById('rec-prov').classList.remove('sel');window._rr='renter'">
+        <div class="rc-i">📦</div><div class="rc-n">Renter</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rec-modal').remove()">Cancel</button>
+      <button class="btn btn-primary" onclick="doRecover('${email}')">Save &amp; Enter →</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+async function doRecover(email){
+  const name=document.getElementById('rec-name')?.value.trim();
+  if(!name){T('Enter your name','e');return;}
+  try{
+    const cred=await auth.signInWithEmailAndPassword(email,window._rp);
+    await db.collection('users').doc(cred.user.uid).set({
+      email,name,role:window._rr||'renter',
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    document.getElementById('rec-modal')?.remove();
+    CU=cred.user;UD={email,name,role:window._rr||'renter'};
+    T('Profile saved! 🎉','s');goHome();
+  }catch(e){T('Recovery failed: '+e.message,'e');}
+}
+
+/* DASHBOARD */
+function buildTabs(){
+  if(!UD){T('No user data','e');goLanding();return;}
+  const role=UD.role;
+  document.getElementById('d-email').textContent=CU.email;
+  const badge=document.getElementById('d-role');
+  badge.textContent=role.toUpperCase();
+  badge.className='badge '+(role==='provider'?'badge-cyan':'badge-green');
+  const tabs=role==='provider'?[
+    {id:'my-plans',lbl:'📋 My Plans'},
+    {id:'browse',lbl:'🔍 Browse'},
+    {id:'stats',lbl:'📊 Rentals'}
+  ]:[
+    {id:'browse',lbl:'🔍 Browse Plans'},
+    {id:'my-rentals',lbl:'📦 My Rentals'},
+    {id:'files',lbl:'🗂️ Files'}
+  ];
+  document.getElementById('d-tabs').innerHTML=tabs.map(t=>
+    `<div class="tab${curTab===t.id?' on':''}" data-tab="${t.id}" onclick="openTab('${t.id}')">${t.lbl}</div>`
+  ).join('');
+  if(!curTab||!tabs.find(t=>t.id===curTab)) curTab=tabs[0].id;
+  openTab(curTab);
+}
+
+function openTab(id){
+  curTab=id;
+  document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('on',el.dataset.tab===id));
+  const body=document.getElementById('d-body');
+  body.innerHTML='<div class="empty"><div class="ei">⏳</div><p>Loading...</p></div>';
+  if(id==='my-plans') tMyPlans(body);
+  else if(id==='browse') tBrowse(body);
+  else if(id==='stats') tStats(body);
+  else if(id==='my-rentals') tMyRentals(body);
+  else if(id==='files') tFiles(body);
+}
+
+/* ── MY PLANS ── */
+async function tMyPlans(body){
+  body.innerHTML=`
+  <div class="sh"><div><div class="st">My Plans</div><div class="ss">Plans you've listed</div></div></div>
+  <div class="cpbox"><h3>➕ New Plan</h3><div class="cpf">
+    <div class="field-row">
+      <div class="field"><label>Title</label><input id="p-t" placeholder="e.g. Starter 50GB"/></div>
+      <div class="field"><label>Storage (GB)</label><input id="p-g" type="number" min="1" placeholder="50"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Price (₹)</label><input id="p-p" type="number" min="1" placeholder="299"/></div>
+      <div class="field"><label>Duration (Days)</label><input id="p-d" type="number" min="1" placeholder="30"/></div>
+    </div>
+    <div class="field"><label>Description</label><textarea id="p-desc" placeholder="What this plan includes..."></textarea></div>
+    <button class="btn btn-primary" style="align-self:flex-start" onclick="mkPlan()">⚡ Publish</button>
+  </div></div>
+  <div id="my-pl"></div>`;
+  await loadMyPlans();
+}
+async function loadMyPlans(){
+  const el=document.getElementById('my-pl'); if(!el)return;
+  try{
+    const snap=await db.collection('plans').where('providerId','==',CU.uid).orderBy('createdAt','desc').get();
+    const rs=await db.collection('rentals').where('providerId','==',CU.uid).where('status','==','active').get();
+    const byP={};rs.forEach(r=>{const p=r.data().planId;byP[p]=(byP[p]||0)+1;});
+    if(snap.empty){el.innerHTML='<div class="empty"><div class="ei">📋</div><p>No plans yet.</p></div>';return;}
+    let h='<div class="plan-grid">';
+    snap.forEach(d=>{
+      const p=d.data();
+      h+=`<div class="plan-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div class="pt">${esc(p.title)}</div>
+          <div class="pp">₹${p.priceINR}<small>/plan</small></div>
+        </div>
+        <div class="plan-rows">
+          <div class="pr"><span>Storage</span><span style="color:var(--cyan)">${p.storageGB} GB</span></div>
+          <div class="pr"><span>Duration</span><span>${p.durationDays} days</span></div>
+          <div class="pr"><span>Active Renters</span><span style="color:var(--green)">${byP[d.id]||0}</span></div>
+        </div>
+        ${p.description?`<div class="pdesc">${esc(p.description)}</div>`:''}
+        <div class="pa">
+          <span class="badge badge-green">● Active</span>
+          <button class="btn btn-danger btn-sm" onclick="delPlan('${d.id}')">🗑 Remove</button>
+        </div>
+      </div>`;
+    });
+    h+='</div>'; el.innerHTML=h;
+  }catch(e){el.innerHTML=`<div class="empty"><div class="ei">⚠️</div><p>${e.message}</p></div>`;}
+}
+async function mkPlan(){
+  const title=document.getElementById('p-t').value.trim();
+  const storageGB=parseInt(document.getElementById('p-g').value);
+  const priceINR=parseInt(document.getElementById('p-p').value);
+  const durationDays=parseInt(document.getElementById('p-d').value);
+  const description=document.getElementById('p-desc').value.trim();
+  if(!title||!storageGB||!priceINR||!durationDays){T('Fill all fields','e');return;}
+  try{
+    await db.collection('plans').add({
+      providerId:CU.uid,providerName:UD.name||CU.email,
+      title,storageGB,priceINR,durationDays,description,active:true,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    T('Plan published!','s');
+    ['p-t','p-g','p-p','p-d','p-desc'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    await loadMyPlans();
+  }catch(e){T('Error: '+e.message,'e');}
+}
+async function delPlan(id){
+  if(!confirm('Remove this plan?'))return;
+  try{await db.collection('plans').doc(id).update({active:false});T('Removed','i');await loadMyPlans();}
+  catch(e){T(e.message,'e');}
+}
+
+/* ── BROWSE ── */
+async function tBrowse(body){
+  const role=UD.role;
+  body.innerHTML=`
+  <div class="sh"><div><div class="st">${role==='provider'?'Rent From Others':'Available Plans'}</div></div></div>
+  <div id="br-list"><div class="empty"><div class="ei">⏳</div><p>Loading...</p></div></div>`;
+  try{
+    const snap=await db.collection('plans').where('active','==',true).orderBy('createdAt','desc').get();
+    const el=document.getElementById('br-list'); if(!el)return;
+    if(snap.empty){el.innerHTML='<div class="empty"><div class="ei">🔍</div><p>No plans available yet.</p></div>';return;}
+    let h='<div class="plan-grid">';
+    snap.forEach(d=>{
+      const p=d.data(),own=p.providerId===CU.uid;
+      h+=`<div class="plan-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="pt">${esc(p.title)}</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:3px">by ${esc(p.providerName||'Provider')}</div>
+          </div>
+          <div class="pp">₹${p.priceINR}<small>/plan</small></div>
+        </div>
+        <div class="plan-rows">
+          <div class="pr"><span>Storage</span><span style="color:var(--cyan)">${p.storageGB} GB</span></div>
+          <div class="pr"><span>Duration</span><span>${p.durationDays} days</span></div>
+        </div>
+        ${p.description?`<div class="pdesc">${esc(p.description)}</div>`:''}
+        <div class="pa">
+          ${own?`<span class="badge badge-amber">Your Plan</span>`
+            :`<button class="btn btn-green" onclick="startPay('${d.id}','${esc(p.title)}',${p.priceINR},${p.storageGB},${p.durationDays},'${p.providerId}')">⚡ Rent — ₹${p.priceINR}</button>`}
+        </div>
+      </div>`;
+    });
+    h+='</div>'; el.innerHTML=h;
+  }catch(e){
+    const el=document.getElementById('br-list');
+    if(el) el.innerHTML=`<div class="empty"><div class="ei">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+/* ── RAZORPAY ── */
+function startPay(planId,title,price,gb,days,provId){
+  if(RZP==='rzp_test_XXXXXXXXXXXXXXXX'){T('Add Razorpay test key','e',5000);return;}
+  try{
+    new Razorpay({key:RZP,amount:price*100,currency:'INR',name:'VaultSpace',description:title,
+      prefill:{email:CU.email},theme:{color:'#38bdf8'},
+      handler:async r=>await finishRental(planId,price,gb,days,provId,r.razorpay_payment_id),
+      modal:{ondismiss:()=>T('Cancelled','i')}
+    }).open();
+  }catch(e){T('Razorpay error: '+e.message,'e');}
+}
+async function finishRental(planId,price,gb,days,provId,payId){
+  const now=new Date(),end=new Date(now.getTime()+days*86400000);
+  try{
+    await db.collection('rentals').add({
+      renterId:CU.uid,planId,providerId:provId,paymentId:payId,
+      priceINR:price,storageGB:gb,durationDays:days,
+      startDate:firebase.firestore.Timestamp.fromDate(now),
+      endDate:firebase.firestore.Timestamp.fromDate(end),
+      storageUsed:0,status:'active',
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    T('Plan rented! 🎉','s');
+    curTab=UD.role==='provider'?'stats':'my-rentals';buildTabs();
+  }catch(e){T('Rental failed: '+e.message,'e');}
+}
+
+/* ── PROVIDER STATS ── */
+async function tStats(body){
+  body.innerHTML=`<div class="sh"><div><div class="st">Rentals Overview</div><div class="ss">Renter identity hidden</div></div></div><div id="st-cont"><div class="empty"><div class="ei">⏳</div><p>Loading...</p></div></div>`;
+  try{
+    const snap=await db.collection('rentals').where('providerId','==',CU.uid).orderBy('createdAt','desc').get();
+    const el=document.getElementById('st-cont'); if(!el)return;
+    let tot=0,rev=0,act=0,cards='';
+    snap.forEach(d=>{
+      const r=d.data();tot++;if(r.status==='active')act++;rev+=r.priceINR||0;
+      const s=r.startDate?.toDate?r.startDate.toDate().toLocaleDateString():'N/A';
+      const e=r.endDate?.toDate?r.endDate.toDate().toLocaleDateString():'N/A';
+      cards+=`<div class="rc">
+        <div class="rh"><span class="badge ${r.status==='active'?'badge-green':'badge-amber'}">${r.status}</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--dim)">Pay: ${r.paymentId||'N/A'}</span></div>
+        <div class="rg">
+          <div><div class="ril">Storage</div><div class="riv" style="color:var(--cyan)">${r.storageGB} GB</div></div>
+          <div><div class="ril">Revenue</div><div class="riv" style="color:var(--green)">₹${r.priceINR}</div></div>
+          <div><div class="ril">Start</div><div class="riv">${s}</div></div>
+          <div><div class="ril">Expires</div><div class="riv">${e}</div></div>
+        </div>
+      </div>`;
+    });
+    el.innerHTML=`<div class="stats-row">
+      <div class="stat-card"><div class="sn2">${tot}</div><div class="sl2">Total</div></div>
+      <div class="stat-card"><div class="sn2" style="color:var(--green)">₹${rev}</div><div class="sl2">Revenue</div></div>
+      <div class="stat-card"><div class="sn2">${act}</div><div class="sl2">Active</div></div>
+    </div>${cards?`<div class="rl">${cards}</div>`:'<div class="empty"><div class="ei">📊</div><p>No rentals yet.</p></div>'}`;
+  }catch(e){document.getElementById('st-cont').innerHTML=`<div class="empty"><div class="ei">⚠️</div><p>${e.message}</p></div>`;}
+}
+
+/* ── MY RENTALS ── */
+async function tMyRentals(body){
+  body.innerHTML=`<div class="sh"><div><div class="st">My Rentals</div><div class="ss">Your storage plans</div></div></div><div id="mr-cont"><div class="empty"><div class="ei">⏳</div><p>Loading...</p></div></div>`;
+  try{
+    const snap=await db.collection('rentals').where('renterId','==',CU.uid).orderBy('createdAt','desc').get();
+    const el=document.getElementById('mr-cont'); if(!el)return;
+    if(snap.empty){el.innerHTML='<div class="empty"><div class="ei">📦</div><p>No rentals yet.<br/>Browse plans first.</p></div>';return;}
+    let h='<div class="rl">';
+    snap.forEach(d=>{
+      const r=d.data();
+      const s=r.startDate?.toDate?r.startDate.toDate().toLocaleDateString():'N/A';
+      const e=r.endDate?.toDate?r.endDate.toDate().toLocaleDateString():'N/A';
+      const used=r.storageUsed||0,tot=(r.storageGB||0)*1024*1024*1024;
+      const pct=tot>0?Math.min(100,(used/tot)*100):0;
+      const exp=r.endDate?.toDate&&r.endDate.toDate()<new Date();
+      h+=`<div class="rc">
+        <div class="rh">
+          <span class="badge ${exp||r.status!=='active'?'badge-amber':'badge-green'}">${exp?'expired':r.status}</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--dim)">Pay: <span style="color:var(--cyan)">${r.paymentId||'N/A'}</span></span>
+        </div>
+        <div class="rg">
+          <div><div class="ril">Space</div><div class="riv" style="color:var(--cyan)">${r.storageGB} GB</div></div>
+          <div><div class="ril">Used</div><div class="riv">${fmtB(used)}</div></div>
+          <div><div class="ril">Started</div><div class="riv">${s}</div></div>
+          <div><div class="ril">Expires</div><div class="riv">${e}</div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:5px"><span>Usage</span><span>${pct.toFixed(1)}%</span></div>
+          <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%"></div></div>
+        </div>
+        ${!exp&&r.status==='active'?'<div style="margin-top:14px"><button class="btn btn-outline btn-sm" onclick="openTab(\'files\')">📁 Manage Files →</button></div>':''}
+      </div>`;
+    });
+    h+='</div>'; el.innerHTML=h;
+  }catch(e){document.getElementById('mr-cont').innerHTML=`<div class="empty"><div class="ei">⚠️</div><p>${e.message}</p></div>`;}
+}
+
+/* ── FILES ── */
+async function tFiles(body){
+  selRental=null;
+  body.innerHTML=`
+  <div class="sh"><div><div class="st">My Files</div><div class="ss">Max 800KB/file · Stored in Firestore</div></div></div>
+  <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:8px">Select Rental</div>
+  <div id="rp-grid" class="rpgrid"></div>
+  <div id="up-wrap" class="hidden">
+    <div class="fzone" id="dz" onclick="document.getElementById('fi').click()">
+      <div class="fzi">☁️</div><div class="fzm">Click or Drop Files</div>
+      <div class="fzs">Max 800KB · Free Firestore storage</div>
+    </div>
+    <input type="file" id="fi" style="display:none" multiple onchange="onFSel(event)"/>
+    <div id="up-prog" class="hidden" style="margin-top:14px"></div>
+  </div>
+  <div id="ftable" style="margin-top:22px"></div>`;
+  setTimeout(()=>{
+    const dz=document.getElementById('dz'); if(!dz)return;
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+    dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+    dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');doUpload(Array.from(e.dataTransfer.files));});
+  },100);
+  await loadRP();
+}
+async function loadRP(){
+  try{
+    const snap=await db.collection('rentals').where('renterId','==',CU.uid).where('status','==','active').get();
+    const grid=document.getElementById('rp-grid'); if(!grid)return;
+    if(snap.empty){
+      grid.innerHTML='';
+      document.getElementById('ftable').innerHTML='<div class="empty"><div class="ei">📦</div><p>No active rentals.<br/>Rent a plan first.</p></div>';
+      return;
+    }
+    let h='';
+    snap.forEach(d=>{
+      const r=d.data(),e=r.endDate?.toDate?r.endDate.toDate().toLocaleDateString():'N/A';
+      h+=`<div class="rpi${selRental===d.id?' sel':''}" data-rid="${d.id}" onclick="pickR('${d.id}')">
+        <div class="rpin">${r.storageGB} GB Plan</div>
+        <div class="rpim">Expires: ${e} · Used: ${fmtB(r.storageUsed||0)}</div>
+      </div>`;
+    });
+    grid.innerHTML=h;
+    if(!selRental){
+      selRental=snap.docs[0].id;
+      grid.querySelector('.rpi').classList.add('sel');
+      document.getElementById('up-wrap').classList.remove('hidden');
+    }
+    await loadFT(selRental);
+  }catch(e){T('Error: '+e.message,'e');}
+}
+function pickR(id){
+  selRental=id;
+  document.querySelectorAll('.rpi').forEach(el=>el.classList.toggle('sel',el.dataset.rid===id));
+  document.getElementById('up-wrap').classList.remove('hidden');
+  loadFT(id);
+}
+async function loadFT(rid){
+  const el=document.getElementById('ftable'); if(!el)return;
+  try{
+    const snap=await db.collection('files').where('rentalId','==',rid).orderBy('uploadedAt','desc').get();
+    if(snap.empty){el.innerHTML='<div class="empty"><div class="ei">🗂️</div><p>No files yet.</p></div>';return;}
+    let h='<table class="ftbl"><thead><tr><th>Name</th><th>Encrypted ID</th><th>Size</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>';
+    snap.forEach(d=>{
+      const f=d.data(),dt=f.uploadedAt?.toDate?f.uploadedAt.toDate().toLocaleString():'N/A';
+      h+=`<tr>
+        <td style="color:var(--txt)">${esc(f.fileName)}</td>
+        <td><span style="color:var(--cyan);font-size:10px">${f.encryptedName}</span></td>
+        <td>${fmtB(f.size)}</td>
+        <td style="color:var(--dim)">${dt}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="dlF('${d.id}','${esc(f.fileName)}')">↓</button>
+          <button class="btn btn-danger btn-sm" onclick="rmF('${d.id}','${rid}',${f.size})">🗑</button>
+        </td>
+      </tr>`;
+    });
+    h+='</tbody></table>'; el.innerHTML=h;
+  }catch(e){el.innerHTML=`<div class="empty"><div class="ei">⚠️</div><p>${e.message}</p></div>`;}
+}
+function onFSel(e){doUpload(Array.from(e.target.files));}
+async function doUpload(files){
+  if(!selRental){T('Select a rental first','e');return;}
+  if(!files.length)return;
+  const prog=document.getElementById('up-prog');
+  if(prog)prog.classList.remove('hidden');
+  for(const file of files){
+    if(file.size>800*1024){T(file.name+' too large (max 800KB)','e',5000);continue;}
+    if(prog)prog.innerHTML=`<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:14px">
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;margin-bottom:7px"><span>Uploading: ${esc(file.name)}</span><span id="upc">0%</span></div>
+      <div class="prog-wrap"><div class="prog-bar" id="ub" style="width:0%"></div></div>
+    </div>`;
+    try{
+      const b=document.getElementById('ub'),p=document.getElementById('upc');
+      if(b)b.style.width='30%';if(p)p.textContent='30%';
+      const b64=await toB64(file);
+      if(b)b.style.width='80%';if(p)p.textContent='80%';
+      const enc=genEnc(file.name);
+      await db.collection('files').add({
+        renterId:CU.uid,rentalId:selRental,
+        fileName:file.name,encryptedName:enc,
+        size:file.size,mimeType:file.type||'application/octet-stream',
+        base64Data:b64,
+        uploadedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await db.collection('rentals').doc(selRental).update({
+        storageUsed:firebase.firestore.FieldValue.increment(file.size)
+      });
+      if(b)b.style.width='100%';if(p)p.textContent='100%';
+      T('✓ '+file.name+' uploaded','s');
+    }catch(e){T('Failed: '+file.name+' — '+e.message,'e');}
+  }
+  if(prog)prog.classList.add('hidden');
+  const fi=document.getElementById('fi');if(fi)fi.value='';
+  await loadFT(selRental); await loadRP();
+}
+function toB64(file){
+  return new Promise((ok,fail)=>{
+    const r=new FileReader();
+    r.onload=()=>ok(r.result);
+    r.onerror=()=>fail(new Error('Read failed'));
+    r.readAsDataURL(file);
+  });
+}
+async function dlF(docId,fileName){
+  T('Fetching...','i',2000);
+  try{
+    const doc=await db.collection('files').doc(docId).get();
+    if(!doc.exists){T('File not found','e');return;}
+    const res=await fetch(doc.data().base64Data);
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=fileName;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),8000);
+  }catch(e){T('Download failed: '+e.message,'e');}
+}
+async function rmF(docId,rid,size){
+  if(!confirm('Delete file?'))return;
+  try{
+    await db.collection('files').doc(docId).delete();
+    await db.collection('rentals').doc(rid).update({storageUsed:firebase.firestore.FieldValue.increment(-size)});
+    T('Deleted','i');await loadFT(rid);await loadRP();
+  }catch(e){T('Delete failed: '+e.message,'e');}
+}
+
+/* UTILS */
+function genEnc(n){
+  const ext=n.includes('.')?n.split('.').pop():'bin';
+  const rnd=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b=>b.toString(16).padStart(2,'0')).join('');
+  return `enc_${Date.now().toString(36)}_${rnd}.${ext}`;
+}
+function fmtB(b){
+  if(!b||b===0)return '0 B';
+  const s=['B','KB','MB','GB'],i=Math.floor(Math.log(b)/Math.log(1024));
+  return (b/Math.pow(1024,i)).toFixed(2)+' '+s[i];
+}
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* BOOT */
+function ldS(src){
+  return new Promise((ok,fail)=>{
+    const s=document.createElement('script');
+    s.src=src;s.async=true;s.onload=ok;
+    s.onerror=()=>fail(new Error('Failed: '+src));
+    document.head.appendChild(s);
+  });
+}
+async function boot(){
+  const bm=document.getElementById('bmsg');
+  try{
+    if(bm)bm.textContent='Loading Firebase...';
+    const CDN='https://www.gstatic.com/firebasejs/10.12.0/';
+    await ldS(CDN+'firebase-app-compat.js');
+    await ldS(CDN+'firebase-auth-compat.js');
+    await ldS(CDN+'firebase-firestore-compat.js');
+    if(bm)bm.textContent='Connecting...';
+    if(!firebase.apps.length) firebase.initializeApp(FB);
+    db=firebase.firestore();
+    auth=firebase.auth();
+    ldS('https://checkout.razorpay.com/v1/checkout.js').catch(()=>{});
+    if(bm)bm.textContent='Checking session...';
+
+    // Timeout fallback — if auth never responds, go to landing after 4s
+    let done = false;
+    const tmo = setTimeout(()=>{ if(!done){ done=true; goLanding(); } }, 4000);
+
+    auth.onAuthStateChanged(async user=>{
+      if(done) return;
+      done=true;
+      clearTimeout(tmo);
+      if(authBusy){ document.getElementById('boot').style.display='none'; return; }
+      if(user){
+        CU=user;
+        try{
+          const doc=await db.collection('users').doc(user.uid).get();
+          if(doc.exists){ UD=doc.data(); goHome(); }
+          else{ goAuth('register'); }
+        }catch(e){ T('Session error: '+e.message,'e',6000); goLanding(); }
+      }else{
+        goLanding();
+      }
+    });
+  }catch(e){
+    document.getElementById('boot').innerHTML=`
+      <div style="color:#f87171;font-family:monospace;font-size:13px;text-align:center;padding:24px;max-width:300px">
+        ⚠️ Firebase failed to load.<br><br>
+        Open in <strong>Chrome browser</strong> with active internet.<br><br>
+        <small style="color:#64748b">${e.message}</small>
+      </div>`;
+  }
+}
+window.addEventListener('DOMContentLoaded',boot);
+</script>
+</body>
+</html>
