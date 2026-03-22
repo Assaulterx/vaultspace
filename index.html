@@ -632,7 +632,7 @@ async function tMyPlans(body){
 async function loadMyPlans(){
   const el=document.getElementById('my-pl'); if(!el)return;
   try{
-    const snap=await db.collection('plans').where('providerId','==',CU.uid).orderBy('createdAt','desc').get();
+    const snap=await db.collection('plans').where('providerId','==',CU.uid).get();
     const rs=await db.collection('rentals').where('providerId','==',CU.uid).where('status','==','active').get();
     const byP={};rs.forEach(r=>{const p=r.data().planId;byP[p]=(byP[p]||0)+1;});
     if(snap.empty){el.innerHTML='<div class="empty"><div class="ei">📋</div><p>No plans yet.<br/>Create your first plan above to start earning.</p></div>';return;}
@@ -778,7 +778,7 @@ async function tBrowse(body){
   <div id="br-list"><div class="empty"><div class="ei">⏳</div><p>Loading plans...</p></div></div>`;
 
   try{
-    const snap=await db.collection('plans').where('active','==',true).orderBy('createdAt','desc').get();
+    const snap=await db.collection('plans').where('active','==',true).get();
     const el=document.getElementById('br-list'); if(!el)return;
 
     let plans=[];
@@ -937,7 +937,7 @@ async function tStats(body){
   </div>
   <div id="st-cont"><div class="empty"><div class="ei">⏳</div><p>Loading...</p></div></div>`;
   try{
-    const snap=await db.collection('rentals').where('providerId','==',CU.uid).orderBy('createdAt','desc').get();
+    const snap=await db.collection('rentals').where('providerId','==',CU.uid).get();
     const plSnap=await db.collection('plans').where('providerId','==',CU.uid).where('active','==',true).get();
     const el=document.getElementById('st-cont'); if(!el)return;
     let tot=0,rev=0,act=0,totalGB=0,cards='';
@@ -1043,7 +1043,7 @@ async function tMyRentals(body){
   </div>
   <div id="mr-cont"><div class="empty"><div class="ei">⏳</div><p>Loading...</p></div></div>`;
   try{
-    const snap=await db.collection('rentals').where('renterId','==',CU.uid).orderBy('createdAt','desc').get();
+    const snap=await db.collection('rentals').where('renterId','==',CU.uid).get();
     const el=document.getElementById('mr-cont'); if(!el)return;
     if(snap.empty){el.innerHTML='<div class="empty"><div class="ei">📦</div><p>No rentals yet.<br/>Browse plans to get started.</p></div>';return;}
     let totalGB=0,usedBytes=0,activeCt=0;
@@ -1186,7 +1186,7 @@ function pickR(id){
 async function loadFT(rid){
   const el=document.getElementById('ftable'); if(!el)return;
   try{
-    const snap=await db.collection('files').where('rentalId','==',rid).orderBy('uploadedAt','desc').get();
+    const snap=await db.collection('files').where('rentalId','==',rid).get();
     if(snap.empty){el.innerHTML='<div class="empty"><div class="ei">🗂️</div><p>No files yet.</p></div>';return;}
     let h='<table class="ftbl"><thead><tr><th>Name</th><th>Encrypted ID</th><th>Size</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>';
     snap.forEach(d=>{
