@@ -589,7 +589,9 @@ function buildDash(){
   const role=UD.role;
   document.getElementById('d-email').textContent=CU.email;
   const rb=document.getElementById('d-role');rb.textContent=role.toUpperCase();rb.className='badge '+(role==='provider'?'bc':'bg');
-  const tabs=role==='provider'?[{id:'my-plans',l:'📋 My Plans'},{id:'browse',l:'🔍 Browse'},{id:'stats',l:'📊 Rentals'}]:[{id:'browse',l:'🔍 Browse Plans'},{id:'my-rentals',l:'📦 My Rentals'},{id:'files',l:'🗂️ Files'}];
+  const tabs=role==='provider'
+    ?[{id:'my-plans',l:'📋 My Plans'},{id:'browse',l:'🔍 Browse'},{id:'stats',l:'📊 Rentals'},{id:'my-rentals',l:'📦 My Rentals'},{id:'files',l:'🗂️ My Files'}]
+    :[{id:'browse',l:'🔍 Browse Plans'},{id:'my-rentals',l:'📦 My Rentals'},{id:'files',l:'🗂️ My Files'}];
   document.getElementById('d-tabs').innerHTML=tabs.map(t=>`<div class="dtab${curTab===t.id?' on':''}" data-id="${t.id}" onclick="openTab('${t.id}')">${t.l}</div>`).join('');
   if(!curTab||!tabs.find(t=>t.id===curTab))curTab=tabs[0].id;
   openTab(curTab);
@@ -602,25 +604,72 @@ function openTab(id){
 
 /* MY PLANS */
 async function tMyPlans(body){
-  body.innerHTML=`<div class="wb"><div class="wb-top"><div><div class="wb-h">Hey, <span>${esc(UD.name||'Provider')}</span> 🏗️</div><div class="wb-sub">Manage your storage plans and earn passive income</div></div><div id="wb-t" style="font-family:var(--mono);font-size:11px;color:var(--dim);padding:5px 12px;background:rgba(99,179,237,.06);border:1px solid var(--border);border-radius:18px"></div></div></div>
-  <div class="cp-box"><h3>➕ Create New Plan</h3>
-  <div style="display:grid;grid-template-columns:1fr auto;gap:18px;align-items:start">
-  <div class="cp-form">
-    <div class="field-row"><div class="field"><label>Plan Title</label><input id="p-t" placeholder="e.g. Starter 50GB"/></div><div class="field"><label>Storage (GB)</label><input id="p-g" type="number" min="1" placeholder="50"/></div></div>
-    <div class="field-row"><div class="field"><label>Price (₹ INR)</label><input id="p-p" type="number" min="1" placeholder="299" oninput="updPrev()"/></div><div class="field"><label>Duration (Days)</label><input id="p-d" type="number" min="1" placeholder="30"/></div></div>
-    <div class="field"><label>Description</label><textarea id="p-desc" placeholder="What this plan includes..."></textarea></div>
-    <button class="btn btn-primary" style="align-self:flex-start" onclick="mkPlan()">⚡ Publish Plan</button>
+  body.innerHTML=`
+  <div class="wb">
+    <div class="wb-top">
+      <div>
+        <div class="wb-h">Hey, <span>${esc(UD.name||'Provider')}</span> 🏗️</div>
+        <div class="wb-sub">Manage your storage plans and earn passive income</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="wb-t" style="font-family:var(--mono);font-size:11px;color:var(--dim);padding:5px 12px;background:rgba(99,179,237,.06);border:1px solid var(--border);border-radius:18px"></div>
+        <button class="btn btn-primary btn-sm" onclick="showNewPlanModal()">➕ New Plan</button>
+      </div>
+    </div>
   </div>
-  <div class="rev-prev"><div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:13px">Revenue Preview</div>
-    <div class="rev-row"><span style="color:var(--dim)">Plan Price</span><span id="pv-p">₹0</span></div>
-    <div class="rev-row"><span style="color:var(--dim)">Platform Fee</span><span id="pv-f" style="color:var(--red)">-₹0</span></div>
-    <div class="rev-row" style="font-weight:700"><span style="color:var(--dim)">You Earn</span><span id="pv-e" style="color:var(--green)">₹0</span></div>
-    <div style="margin-top:11px;font-family:var(--mono);font-size:9px;color:var(--dim)">* 10% platform fee</div>
-  </div></div></div>
   <div id="my-pl"></div>`;
-  function tick(){const el=document.getElementById('wb-t');if(el)el.textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}tick();setInterval(tick,1000);
+  function tick(){const el=document.getElementById('wb-t');if(el)el.textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+  tick();setInterval(tick,1000);
   await loadMyPlans();
 }
+
+function showNewPlanModal(){
+  document.getElementById('new-plan-modal')?.remove();
+  const m=document.createElement('div');m.id='new-plan-modal';m.className='modal-bg';
+  m.innerHTML=`<div class="modal" style="max-width:520px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-size:18px;font-weight:800">➕ Create New Plan</div>
+      <button onclick="document.getElementById('new-plan-modal').remove()" style="background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer">✕</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:13px;margin-bottom:20px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>Plan Title</label><input id="p-t" placeholder="e.g. Starter 50GB"/></div>
+        <div class="field"><label>Storage (GB)</label><input id="p-g" type="number" min="1" placeholder="50"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>Price (₹ INR)</label><input id="p-p" type="number" min="1" placeholder="299" oninput="updPrev()"/></div>
+        <div class="field"><label>Duration (Days)</label><input id="p-d" type="number" min="1" placeholder="30"/></div>
+      </div>
+      <div class="field"><label>Description</label><textarea id="p-desc" placeholder="What this plan includes..." style="min-height:70px"></textarea></div>
+    </div>
+
+    <!-- Revenue preview strip -->
+    <div style="background:rgba(104,211,145,.06);border:1px solid rgba(104,211,145,.2);border-radius:10px;padding:14px;margin-bottom:20px;display:flex;gap:0">
+      <div style="flex:1;text-align:center;border-right:1px solid rgba(104,211,145,.15)">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Plan Price</div>
+        <div id="pv-p" style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--txt)">₹0</div>
+      </div>
+      <div style="flex:1;text-align:center;border-right:1px solid rgba(104,211,145,.15)">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Platform Fee</div>
+        <div id="pv-f" style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--red)">₹0</div>
+      </div>
+      <div style="flex:1;text-align:center">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">You Earn</div>
+        <div id="pv-e" style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--green)">₹0</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('new-plan-modal').remove()">Cancel</button>
+      <button class="btn btn-primary" style="flex:2;justify-content:center" onclick="mkPlan()">⚡ Publish Plan</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  setTimeout(()=>document.getElementById('p-t')?.focus(),100);
+}
+
 async function loadMyPlans(){
   const el=document.getElementById('my-pl');if(!el)return;
   try{
@@ -637,13 +686,57 @@ async function loadMyPlans(){
     h+=`</tbody></table></div></div>`;el.innerHTML=h;
   }catch(e){el.innerHTML=`<div class="empty"><div class="eico">⚠️</div><p>${e.message}</p></div>`;}
 }
+function openAddPlanModal(){
+  document.getElementById('add-plan-modal')?.remove();
+  const m=document.createElement('div');m.id='add-plan-modal';m.className='modal-bg';
+  m.innerHTML=`<div class="modal" style="max-width:520px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-size:18px;font-weight:800">➕ Create New Plan</div>
+      <button onclick="document.getElementById('add-plan-modal').remove()" style="background:none;border:none;color:var(--dim);font-size:22px;cursor:pointer;line-height:1;padding:0 4px">×</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="field-row">
+        <div class="field"><label>Plan Title</label><input id="p-t" placeholder="e.g. Starter 50GB"/></div>
+        <div class="field"><label>Storage (GB)</label><input id="p-g" type="number" min="1" placeholder="50"/></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Price (₹ INR)</label><input id="p-p" type="number" min="1" placeholder="299" oninput="updPrev()"/></div>
+        <div class="field"><label>Duration (Days)</label><input id="p-d" type="number" min="1" placeholder="30"/></div>
+      </div>
+      <div class="field"><label>Description (optional)</label><textarea id="p-desc" placeholder="What this plan includes..."></textarea></div>
+      <div style="background:rgba(104,211,145,.05);border:1px solid rgba(104,211,145,.15);border-radius:10px;padding:14px">
+        <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:11px">💰 Revenue Preview</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px"><span style="color:var(--dim)">Plan Price</span><span id="pv-p">₹0</span></div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px"><span style="color:var(--dim)">Platform Fee (10%)</span><span id="pv-f" style="color:var(--red)">-₹0</span></div>
+          <div style="height:1px;background:rgba(104,211,145,.15);margin:3px 0"></div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:15px;font-weight:700"><span style="color:var(--dim)">You Earn</span><span id="pv-e" style="color:var(--green)">₹0</span></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('add-plan-modal').remove()">Cancel</button>
+        <button class="btn btn-primary" onclick="mkPlan()">⚡ Publish Plan</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  setTimeout(()=>document.getElementById('p-t')?.focus(),100);
+}
 function updPrev(){const v=parseInt(document.getElementById('p-p')?.value)||0,f=Math.round(v*.1),e=v-f;const pp=document.getElementById('pv-p'),pf=document.getElementById('pv-f'),pe=document.getElementById('pv-e');if(pp)pp.textContent='₹'+v;if(pf)pf.textContent='-₹'+f;if(pe)pe.textContent='₹'+e;}
 async function mkPlan(){
   const title=document.getElementById('p-t').value.trim(),storageGB=parseInt(document.getElementById('p-g').value),priceINR=parseInt(document.getElementById('p-p').value),durationDays=parseInt(document.getElementById('p-d').value),description=document.getElementById('p-desc').value.trim();
   if(!title||!storageGB||!priceINR||!durationDays){T('Fill all required fields','e');return;}
-  try{await db.collection('plans').add({providerId:CU.uid,providerName:UD.name||CU.email,title,storageGB,priceINR,durationDays,description,active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()});T('Plan published! 🎉','s');['p-t','p-g','p-p','p-d','p-desc'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});updPrev();await loadMyPlans();}
-  catch(e){T('Error: '+e.message,'e');}
+  const btns=document.querySelectorAll('#new-plan-modal .btn-primary');
+  btns.forEach(b=>{b.disabled=true;b.textContent='Publishing...';});
+  try{
+    await db.collection('plans').add({providerId:CU.uid,providerName:UD.name||CU.email,title,storageGB,priceINR,durationDays,description,active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    document.getElementById('new-plan-modal')?.remove();
+    T('Plan published! 🎉','s');
+    await loadMyPlans();
+  }catch(e){T('Error: '+e.message,'e');btns.forEach(b=>{b.disabled=false;b.textContent='⚡ Publish Plan';});}
 }
+
 async function delPlan(id){if(!confirm('Remove this plan?'))return;try{await db.collection('plans').doc(id).update({active:false});T('Removed','i');await loadMyPlans();}catch(e){T(e.message,'e');}}
 
 /* BROWSE */
