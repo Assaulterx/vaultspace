@@ -684,6 +684,7 @@ let db,auth;
 let CU=null,UD=null;
 let aMode='register',selRole=null,curTab=null,selRental=null;
 let authBusy=false;
+let fbReady=false; // true once Firebase + auth are initialised
 let fbReady=false; // becomes true once Firebase is initialised
 
 /* ══════════════════════════════════════
@@ -1534,50 +1535,64 @@ function setBM(m){}
 function ldS(src){return new Promise((ok,fail)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>fail(new Error('Load failed: '+src));document.head.appendChild(s);});}
 
 async function boot(){
-  // Show landing INSTANTLY — no waiting for Firebase
+  // Step 1: Show landing INSTANTLY
   showOnly('pg-landing');
 
-  // Load Firebase in background silently
-  function ldSafe(src){
-    return new Promise(res=>{
+  // Step 2: Load Firebase scripts one by one (sequential, not parallel)
+  const scripts=[
+    'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js',
+    'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js'
+  ];
+
+  for(const src of scripts){
+    const ok = await new Promise(res=>{
       const s=document.createElement('script');
       s.src=src;
       s.onload=()=>res(true);
       s.onerror=()=>res(false);
-      setTimeout(()=>res(false),10000);
+      setTimeout(()=>res(false), 12000);
       document.head.appendChild(s);
     });
+    if(!ok){
+      T('Firebase script failed to load. Check your internet connection.','e',8000);
+      return;
+    }
   }
 
-  const v='10.12.0', cdn=`https://www.gstatic.com/firebasejs/${v}/`;
-  const ok1=await ldSafe(cdn+'firebase-app-compat.js');
-  if(!ok1){ T('No internet? Firebase failed to load.','e',8000); return; }
-  const ok2=await ldSafe(cdn+'firebase-auth-compat.js');
-  const ok3=await ldSafe(cdn+'firebase-firestore-compat.js');
-  if(!ok2||!ok3){ T('Firebase partially loaded. Try refreshing.','e',6000); return; }
+  // Step 3: Optional Razorpay (don't wait long)
+  new Promise(res=>{
+    const s=document.createElement('script');
+    s.src='https://checkout.razorpay.com/v1/checkout.js';
+    s.onload=()=>res(true); s.onerror=()=>res(false);
+    setTimeout(()=>res(false),6000);
+    document.head.appendChild(s);
+  });
 
-  // Razorpay optional
-  ldSafe('https://checkout.razorpay.com/v1/checkout.js');
-
-  if(!window.firebase){ return; }
+  // Step 4: Init Firebase
   try{
+    if(!window.firebase){ T('Firebase not available. Refresh page.','e',6000); return; }
     if(firebase.apps.length===0) firebase.initializeApp(FB);
     db=firebase.firestore();
     auth=firebase.auth();
-    fbReady=true; // Firebase is now ready
-  }catch(e){ T('Firebase init error: '+e.message,'e',6000); return; }
+    fbReady=true;
+  }catch(e){
+    T('Firebase init failed: '+e.message,'e',6000);
+    return;
+  }
 
-  // Restore session if user was already logged in
-  let done=false;
-  const tmo=setTimeout(()=>{ done=true; },3000);
+  // Step 5: Restore existing session (for page reloads)
+  let sessionDone=false;
+  setTimeout(()=>{ sessionDone=true; }, 3000);
+
   auth.onAuthStateChanged(async user=>{
-    if(done||authBusy) return;
-    done=true; clearTimeout(tmo);
+    if(sessionDone||authBusy) return;
+    sessionDone=true;
     if(user&&!UD){
       CU=user;
       try{
         const doc=await db.collection('users').doc(user.uid).get();
-        if(doc.exists){ UD=doc.data(); goHome(); }
+        if(doc&&doc.exists){ UD=doc.data(); goHome(); }
       }catch(e){}
     }
   });
