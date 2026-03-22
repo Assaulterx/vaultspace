@@ -590,7 +590,7 @@ function buildDash(){
   document.getElementById('d-email').textContent=CU.email;
   const rb=document.getElementById('d-role');rb.textContent=role.toUpperCase();rb.className='badge '+(role==='provider'?'bc':'bg');
   const tabs=role==='provider'
-    ?[{id:'my-plans',l:'📋 My Plans'},{id:'browse',l:'🔍 Browse'},{id:'stats',l:'📊 Rentals'},{id:'my-rentals',l:'📦 My Rentals'},{id:'files',l:'🗂️ My Files'}]
+    ?[{id:'my-plans',l:'📋 My Plans'},{id:'browse',l:'🔍 Browse'},{id:'stats',l:'📊 Rentals'}]
     :[{id:'browse',l:'🔍 Browse Plans'},{id:'my-rentals',l:'📦 My Rentals'},{id:'files',l:'🗂️ My Files'}];
   document.getElementById('d-tabs').innerHTML=tabs.map(t=>`<div class="dtab${curTab===t.id?' on':''}" data-id="${t.id}" onclick="openTab('${t.id}')">${t.l}</div>`).join('');
   if(!curTab||!tabs.find(t=>t.id===curTab))curTab=tabs[0].id;
